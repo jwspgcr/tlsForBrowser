@@ -165,7 +165,7 @@ view : Model -> Browser.Document Msg
 view model =
     let
         hostName =
-            "http://localhost:8000"
+            "https://jwspgcr.github.io/tlsForBrowser"
 
         urlString =
             String.replace hostName "" (Url.toString model.url)
