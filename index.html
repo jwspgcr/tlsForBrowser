@@ -6192,7 +6192,7 @@ var $author$project$Main$postAtAdd = F2(
 				body: $elm$http$Http$jsonBody(
 					A3($author$project$Main$textEncoder, userID, '/tls-add', jsonText)),
 				expect: A2($elm$http$Http$expectJson, $author$project$Main$GotAtAdd, $author$project$Main$textDecoder),
-				url: 'http://jwspgcrtls2.pythonanywhere.com'
+				url: 'https://jwspgcrtls2.pythonanywhere.com'
 			});
 	});
 var $author$project$Main$GotAtHistory = function (a) {
@@ -6204,7 +6204,7 @@ var $author$project$Main$postAtHistory = function (userID) {
 			body: $elm$http$Http$jsonBody(
 				A3($author$project$Main$textEncoder, userID, '/tls-history', '')),
 			expect: A2($elm$http$Http$expectJson, $author$project$Main$GotAtHistory, $author$project$Main$textDecoder),
-			url: 'http://jwspgcrtls2.pythonanywhere.com'
+			url: 'https://jwspgcrtls2.pythonanywhere.com'
 		});
 };
 var $author$project$Main$GotAtHome = function (a) {
@@ -6217,7 +6217,7 @@ var $author$project$Main$postAtHome = F2(
 				body: $elm$http$Http$jsonBody(
 					A3($author$project$Main$textEncoder, userID, '/tls', jsonText)),
 				expect: A2($elm$http$Http$expectJson, $author$project$Main$GotAtHome, $author$project$Main$textDecoder),
-				url: 'http://jwspgcrtls2.pythonanywhere.com'
+				url: 'https://jwspgcrtls2.pythonanywhere.com'
 			});
 	});
 var $author$project$Main$postAtUser = function (userID) {
@@ -6226,7 +6226,7 @@ var $author$project$Main$postAtUser = function (userID) {
 			body: $elm$http$Http$jsonBody(
 				A3($author$project$Main$textEncoder, userID, '/tls-init', '')),
 			expect: A2($elm$http$Http$expectJson, $author$project$Main$GotAtHome, $author$project$Main$textDecoder),
-			url: 'http://jwspgcrtls2.pythonanywhere.com'
+			url: 'https://jwspgcrtls2.pythonanywhere.com'
 		});
 };
 var $elm$browser$Browser$Navigation$pushUrl = _Browser_pushUrl;
