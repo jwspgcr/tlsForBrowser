@@ -219,9 +219,9 @@ viewHeader model =
     header []
         [ h1 [] [ text "三文字しりとり" ]
         , ul []
-            [ viewLink "/home" "しりとり"
-            , viewLink "/add" "単語の追加"
-            , viewLink "/history" "履歴"
+            [ viewLink "/tlsForBrowser/home" "しりとり"
+            , viewLink "/tlsForBrowser/add" "単語の追加"
+            , viewLink "/tlsForBrowser/history" "履歴"
             , input [ placeholder "お名前", value model.inputUser, onInput ChangeAtUser ] []
             , text model.userText
             , button [ onClick PostAtUser ] [ text "しりとりを初期化" ]
