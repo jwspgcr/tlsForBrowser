@@ -70,6 +70,46 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
+    let
+        postRequest : (Result Http.Error String -> Msg) -> Request -> Cmd Msg
+        postRequest message req =
+            Http.post
+                { url = "https://jwspgcrtls2.pythonanywhere.com"
+                , body = Http.stringBody "application/x-www-form-urlencoded" (newRequest req)
+                , expect = Http.expectJson message textDecoder
+                }
+
+        textDecoder : D.Decoder String
+        textDecoder =
+            D.field "text" D.string
+
+        newRequest : Request -> String
+        newRequest req =
+            [ "user_id=", req.userID, "&command=", req.command, "&text", req.text ] |> String.concat
+
+        showResult : Result Http.Error String -> (String -> Model) -> ( Model, Cmd Msg )
+        showResult result modelFunc =
+            case result of
+                Ok message ->
+                    ( modelFunc message, Cmd.none )
+
+                Err error ->
+                    case error of
+                        Http.BadUrl message ->
+                            ( modelFunc ("BadUrl" ++ message), Cmd.none )
+
+                        Http.Timeout ->
+                            ( modelFunc "Timeout", Cmd.none )
+
+                        Http.NetworkError ->
+                            ( modelFunc "NetworkError", Cmd.none )
+
+                        Http.BadStatus code ->
+                            ( modelFunc ("BadStatus" ++ String.fromInt code), Cmd.none )
+
+                        Http.BadBody message ->
+                            ( modelFunc ("BadBody" ++ message), Cmd.none )
+    in
     case msg of
         LinkClicked urlRequest ->
             case urlRequest of
@@ -106,50 +146,16 @@ update msg model =
             ( model, postRequest GotAtHistory (Request model.inputUser "/tls-history" "") )
 
         GotAtUser result ->
-            case result of
-                Ok message ->
-                    ( { model | userText = message }, Cmd.none )
-
-                Err _ ->
-                    ( { model | userText = "レスポンスの取得に失敗しました。" }, Cmd.none )
+            showResult result (\text -> { model | userText = text })
 
         GotAtHome result ->
-            case result of
-                Ok message ->
-                    ( { model | homeText = message }, Cmd.none )
-
-                Err error ->
-                    case error of
-                        Http.BadUrl message ->
-                            ( { model | homeText = "BadUrl" ++ message }, Cmd.none )
-
-                        Http.Timeout ->
-                            ( { model | homeText = "Timeout" }, Cmd.none )
-
-                        Http.NetworkError ->
-                            ( { model | homeText = "NetworkError" }, Cmd.none )
-
-                        Http.BadStatus code ->
-                            ( { model | homeText = "BadStatus" ++ String.fromInt code }, Cmd.none )
-
-                        Http.BadBody message ->
-                            ( { model | homeText = "BadBody" ++ message }, Cmd.none )
+            showResult result (\text -> { model | homeText = text })
 
         GotAtAdd result ->
-            case result of
-                Ok message ->
-                    ( { model | addText = message }, Cmd.none )
-
-                Err _ ->
-                    ( { model | addText = "レスポンスの取得に失敗しました。" }, Cmd.none )
+            showResult result (\text -> { model | addText = text })
 
         GotAtHistory result ->
-            case result of
-                Ok message ->
-                    ( { model | historyText = message }, Cmd.none )
-
-                Err _ ->
-                    ( { model | historyText = "レスポンスの取得に失敗しました。" }, Cmd.none )
+            showResult result (\text -> { model | historyText = text })
 
 
 
@@ -169,41 +175,34 @@ view : Model -> Browser.Document Msg
 view model =
     case model.url.path of
         "/tlsForBrowser/home" ->
-            { title = "three-letterSiritori"
-            , body =
+            viewDocument
                 [ viewHeader model
                 , input [ placeholder "三文字のかたかな", value model.inputText, onInput ChangeAtHome ] []
                 , button [ onClick PostAtHome ] [ text "送信" ]
                 , text model.homeText
                 ]
-            }
 
         "/tlsForBrowser/add" ->
-            { title = "three-letterSiritori"
-            , body =
+            viewDocument
                 [ viewHeader model
                 , input [ placeholder "三文字のかたかな", value model.inputText, onInput ChangeAtAdd ] []
                 , button [ onClick PostAtAdd ] [ text "送信" ]
                 , text model.addText
                 ]
-            }
 
         "/tlsForBrowser/history" ->
-            { title = "three-letterSiritori"
-            , body =
+            viewDocument
                 [ viewHeader model
                 , button [ onClick PostAtHistory ] [ text "履歴取得" ]
                 , text model.historyText
                 ]
-            }
 
         _ ->
-            { title = "three-letterSiritori"
-            , body =
+            viewDocument
                 [ viewHeader model
+                , button [ onClick PostAtHistory ] [ text "履歴取得" ]
                 , text "このページは存在しません。"
                 ]
-            }
 
 
 viewLink : String -> String -> Html msg
@@ -226,60 +225,15 @@ viewHeader model =
         ]
 
 
-
--- HTTP
-
-postRequest :((Result Http.Error String) -> Msg) ->Request -> Cmd Msg
-postRequest msg req=
-  Http.post
-      { url = "https://jwspgcrtls2.pythonanywhere.com"
-      , body = Http.stringBody "application/x-www-form-urlencoded" (newRequest req)
-      , expect = Http.expectJson msg textDecoder
-      }
-
-postAtUser msg req =
-  postCommon GotAtUser req
-
-
-postAtHome : String -> String -> Cmd Msg
-postAtHome =
-    Http.post
-        { url = "https://jwspgcrtls2.pythonanywhere.com"
-        , body = Http.stringBody "application/x-www-form-urlencoded" newRequest
-        , expect = Http.expectJson GotAtHome textDecoder
-        }
-
-
-postAtAdd : String -> String -> Cmd Msg
-postAtAdd userID jsonText =
-    Http.post
-        { url = "https://jwspgcrtls2.pythonanywhere.com"
-        , body = Http.jsonBody (textEncoder userID "/tls-add" jsonText)
-        , expect = Http.expectJson GotAtAdd textDecoder
-        }
-
-
-postAtHistory : String -> Cmd Msg
-postAtHistory userID =
-    Http.post
-        { url = "https://jwspgcrtls2.pythonanywhere.com"
-        , body = Http.jsonBody (textEncoder userID "/tls-history" "")
-        , expect = Http.expectJson GotAtHistory textDecoder
-        }
-
-
-textDecoder : D.Decoder String
-textDecoder =
-    D.field "text" D.string
-
-
-newRequest : Request -> E.Value
-newRequest req =
-    [ "user_id=", req.userID, "&command=", req.command, "&text", req, text ] |> String.concat
+viewDocument : List (Html Msg) -> Browser.Document Msg
+viewDocument msgHtmlList =
+    { title = "three-letterSiritori"
+    , body = msgHtmlList
+    }
 
 
 
--- TYPE
+--TYPE
 
 
 type alias Request =

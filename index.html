@@ -5356,9 +5356,24 @@ var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
 var $author$project$Main$subscriptions = function (_v0) {
 	return $elm$core$Platform$Sub$none;
 };
-var $elm$browser$Browser$Navigation$load = _Browser_load;
 var $author$project$Main$GotAtAdd = function (a) {
 	return {$: 'GotAtAdd', a: a};
+};
+var $author$project$Main$GotAtHistory = function (a) {
+	return {$: 'GotAtHistory', a: a};
+};
+var $author$project$Main$GotAtHome = function (a) {
+	return {$: 'GotAtHome', a: a};
+};
+var $author$project$Main$GotAtUser = function (a) {
+	return {$: 'GotAtUser', a: a};
+};
+var $author$project$Main$Request = F3(
+	function (userID, command, text) {
+		return {command: command, text: text, userID: userID};
+	});
+var $elm$core$String$concat = function (strings) {
+	return A2($elm$core$String$join, '', strings);
 };
 var $elm$json$Json$Decode$decodeString = _Json_runOnString;
 var $elm$http$Http$BadStatus_ = F2(
@@ -5974,12 +5989,8 @@ var $elm$http$Http$expectJson = F2(
 						A2($elm$json$Json$Decode$decodeString, decoder, string));
 				}));
 	});
-var $elm$http$Http$jsonBody = function (value) {
-	return A2(
-		_Http_pair,
-		'application/json',
-		A2($elm$json$Json$Encode$encode, 0, value));
-};
+var $elm$json$Json$Decode$field = _Json_decodeField;
+var $elm$browser$Browser$Navigation$load = _Browser_load;
 var $elm$http$Http$Request = function (a) {
 	return {$: 'Request', a: a};
 };
@@ -6152,84 +6163,9 @@ var $elm$http$Http$post = function (r) {
 	return $elm$http$Http$request(
 		{body: r.body, expect: r.expect, headers: _List_Nil, method: 'POST', timeout: $elm$core$Maybe$Nothing, tracker: $elm$core$Maybe$Nothing, url: r.url});
 };
-var $elm$json$Json$Decode$field = _Json_decodeField;
-var $elm$json$Json$Decode$string = _Json_decodeString;
-var $author$project$Main$textDecoder = A2($elm$json$Json$Decode$field, 'text', $elm$json$Json$Decode$string);
-var $elm$json$Json$Encode$object = function (pairs) {
-	return _Json_wrap(
-		A3(
-			$elm$core$List$foldl,
-			F2(
-				function (_v0, obj) {
-					var k = _v0.a;
-					var v = _v0.b;
-					return A3(_Json_addField, k, v, obj);
-				}),
-			_Json_emptyObject(_Utils_Tuple0),
-			pairs));
-};
-var $elm$json$Json$Encode$string = _Json_wrap;
-var $author$project$Main$textEncoder = F3(
-	function (userID, command, text) {
-		return $elm$json$Json$Encode$object(
-			_List_fromArray(
-				[
-					_Utils_Tuple2(
-					'command',
-					$elm$json$Json$Encode$string(command)),
-					_Utils_Tuple2(
-					'user_id',
-					$elm$json$Json$Encode$string(userID)),
-					_Utils_Tuple2(
-					'text',
-					$elm$json$Json$Encode$string(text))
-				]));
-	});
-var $author$project$Main$postAtAdd = F2(
-	function (userID, jsonText) {
-		return $elm$http$Http$post(
-			{
-				body: $elm$http$Http$jsonBody(
-					A3($author$project$Main$textEncoder, userID, '/tls-add', jsonText)),
-				expect: A2($elm$http$Http$expectJson, $author$project$Main$GotAtAdd, $author$project$Main$textDecoder),
-				url: 'https://jwspgcrtls2.pythonanywhere.com'
-			});
-	});
-var $author$project$Main$GotAtHistory = function (a) {
-	return {$: 'GotAtHistory', a: a};
-};
-var $author$project$Main$postAtHistory = function (userID) {
-	return $elm$http$Http$post(
-		{
-			body: $elm$http$Http$jsonBody(
-				A3($author$project$Main$textEncoder, userID, '/tls-history', '')),
-			expect: A2($elm$http$Http$expectJson, $author$project$Main$GotAtHistory, $author$project$Main$textDecoder),
-			url: 'https://jwspgcrtls2.pythonanywhere.com'
-		});
-};
-var $author$project$Main$GotAtHome = function (a) {
-	return {$: 'GotAtHome', a: a};
-};
-var $author$project$Main$postAtHome = F2(
-	function (userID, jsonText) {
-		return $elm$http$Http$post(
-			{
-				body: $elm$http$Http$jsonBody(
-					A3($author$project$Main$textEncoder, userID, '/tls', jsonText)),
-				expect: A2($elm$http$Http$expectJson, $author$project$Main$GotAtHome, $author$project$Main$textDecoder),
-				url: 'https://jwspgcrtls2.pythonanywhere.com'
-			});
-	});
-var $author$project$Main$postAtUser = function (userID) {
-	return $elm$http$Http$post(
-		{
-			body: $elm$http$Http$jsonBody(
-				A3($author$project$Main$textEncoder, userID, '/tls-init', '')),
-			expect: A2($elm$http$Http$expectJson, $author$project$Main$GotAtHome, $author$project$Main$textDecoder),
-			url: 'https://jwspgcrtls2.pythonanywhere.com'
-		});
-};
 var $elm$browser$Browser$Navigation$pushUrl = _Browser_pushUrl;
+var $elm$json$Json$Decode$string = _Json_decodeString;
+var $elm$http$Http$stringBody = _Http_pair;
 var $elm$url$Url$addPort = F2(
 	function (maybePort, starter) {
 		if (maybePort.$ === 'Nothing') {
@@ -6276,6 +6212,61 @@ var $elm$url$Url$toString = function (url) {
 };
 var $author$project$Main$update = F2(
 	function (msg, model) {
+		var textDecoder = A2($elm$json$Json$Decode$field, 'text', $elm$json$Json$Decode$string);
+		var showResult = F2(
+			function (result, modelFunc) {
+				if (result.$ === 'Ok') {
+					var message = result.a;
+					return _Utils_Tuple2(
+						modelFunc(message),
+						$elm$core$Platform$Cmd$none);
+				} else {
+					var error = result.a;
+					switch (error.$) {
+						case 'BadUrl':
+							var message = error.a;
+							return _Utils_Tuple2(
+								modelFunc('BadUrl' + message),
+								$elm$core$Platform$Cmd$none);
+						case 'Timeout':
+							return _Utils_Tuple2(
+								modelFunc('Timeout'),
+								$elm$core$Platform$Cmd$none);
+						case 'NetworkError':
+							return _Utils_Tuple2(
+								modelFunc('NetworkError'),
+								$elm$core$Platform$Cmd$none);
+						case 'BadStatus':
+							var code = error.a;
+							return _Utils_Tuple2(
+								modelFunc(
+									'BadStatus' + $elm$core$String$fromInt(code)),
+								$elm$core$Platform$Cmd$none);
+						default:
+							var message = error.a;
+							return _Utils_Tuple2(
+								modelFunc('BadBody' + message),
+								$elm$core$Platform$Cmd$none);
+					}
+				}
+			});
+		var newRequest = function (req) {
+			return $elm$core$String$concat(
+				_List_fromArray(
+					['user_id=', req.userID, '&command=', req.command, '&text', req.text]));
+		};
+		var postRequest = F2(
+			function (message, req) {
+				return $elm$http$Http$post(
+					{
+						body: A2(
+							$elm$http$Http$stringBody,
+							'application/x-www-form-urlencoded',
+							newRequest(req)),
+						expect: A2($elm$http$Http$expectJson, message, textDecoder),
+						url: 'https://jwspgcrtls2.pythonanywhere.com'
+					});
+			});
 		switch (msg.$) {
 			case 'LinkClicked':
 				var urlRequest = msg.a;
@@ -6324,116 +6315,71 @@ var $author$project$Main$update = F2(
 			case 'PostAtUser':
 				return _Utils_Tuple2(
 					model,
-					$author$project$Main$postAtUser(model.inputUser));
+					A2(
+						postRequest,
+						$author$project$Main$GotAtUser,
+						A3($author$project$Main$Request, model.inputUser, '/tls-init', '')));
 			case 'PostAtHome':
 				return _Utils_Tuple2(
 					model,
-					A2($author$project$Main$postAtHome, model.inputUser, model.inputText));
+					A2(
+						postRequest,
+						$author$project$Main$GotAtHome,
+						A3($author$project$Main$Request, model.inputUser, '/tls', model.inputText)));
 			case 'PostAtAdd':
 				return _Utils_Tuple2(
 					model,
-					A2($author$project$Main$postAtAdd, model.inputUser, model.inputText));
+					A2(
+						postRequest,
+						$author$project$Main$GotAtAdd,
+						A3($author$project$Main$Request, model.inputUser, '/tls-add', model.inputText)));
 			case 'PostAtHistory':
 				return _Utils_Tuple2(
 					model,
-					$author$project$Main$postAtHistory(model.inputUser));
+					A2(
+						postRequest,
+						$author$project$Main$GotAtHistory,
+						A3($author$project$Main$Request, model.inputUser, '/tls-history', '')));
 			case 'GotAtUser':
 				var result = msg.a;
-				if (result.$ === 'Ok') {
-					var message = result.a;
-					return _Utils_Tuple2(
-						_Utils_update(
+				return A2(
+					showResult,
+					result,
+					function (text) {
+						return _Utils_update(
 							model,
-							{userText: message}),
-						$elm$core$Platform$Cmd$none);
-				} else {
-					return _Utils_Tuple2(
-						_Utils_update(
-							model,
-							{userText: 'レスポンスの取得に失敗しました。'}),
-						$elm$core$Platform$Cmd$none);
-				}
+							{userText: text});
+					});
 			case 'GotAtHome':
 				var result = msg.a;
-				if (result.$ === 'Ok') {
-					var message = result.a;
-					return _Utils_Tuple2(
-						_Utils_update(
+				return A2(
+					showResult,
+					result,
+					function (text) {
+						return _Utils_update(
 							model,
-							{homeText: message}),
-						$elm$core$Platform$Cmd$none);
-				} else {
-					var error = result.a;
-					switch (error.$) {
-						case 'BadUrl':
-							var message = error.a;
-							return _Utils_Tuple2(
-								_Utils_update(
-									model,
-									{homeText: 'BadUrl' + message}),
-								$elm$core$Platform$Cmd$none);
-						case 'Timeout':
-							return _Utils_Tuple2(
-								_Utils_update(
-									model,
-									{homeText: 'Timeout'}),
-								$elm$core$Platform$Cmd$none);
-						case 'NetworkError':
-							return _Utils_Tuple2(
-								_Utils_update(
-									model,
-									{homeText: 'NetworkError'}),
-								$elm$core$Platform$Cmd$none);
-						case 'BadStatus':
-							var code = error.a;
-							return _Utils_Tuple2(
-								_Utils_update(
-									model,
-									{
-										homeText: 'BadStatus' + $elm$core$String$fromInt(code)
-									}),
-								$elm$core$Platform$Cmd$none);
-						default:
-							var message = error.a;
-							return _Utils_Tuple2(
-								_Utils_update(
-									model,
-									{homeText: 'BadBody' + message}),
-								$elm$core$Platform$Cmd$none);
-					}
-				}
+							{homeText: text});
+					});
 			case 'GotAtAdd':
 				var result = msg.a;
-				if (result.$ === 'Ok') {
-					var message = result.a;
-					return _Utils_Tuple2(
-						_Utils_update(
+				return A2(
+					showResult,
+					result,
+					function (text) {
+						return _Utils_update(
 							model,
-							{addText: message}),
-						$elm$core$Platform$Cmd$none);
-				} else {
-					return _Utils_Tuple2(
-						_Utils_update(
-							model,
-							{addText: 'レスポンスの取得に失敗しました。'}),
-						$elm$core$Platform$Cmd$none);
-				}
+							{addText: text});
+					});
 			default:
 				var result = msg.a;
-				if (result.$ === 'Ok') {
-					var message = result.a;
-					return _Utils_Tuple2(
-						_Utils_update(
+				return A2(
+					showResult,
+					result,
+					function (text) {
+						return _Utils_update(
 							model,
-							{historyText: message}),
-						$elm$core$Platform$Cmd$none);
-				} else {
-					return _Utils_Tuple2(
-						_Utils_update(
-							model,
-							{historyText: 'レスポンスの取得に失敗しました。'}),
-						$elm$core$Platform$Cmd$none);
-				}
+							{historyText: text});
+					});
 		}
 	});
 var $author$project$Main$ChangeAtAdd = function (a) {
@@ -6495,6 +6441,7 @@ var $elm$html$Html$Events$onInput = function (tagger) {
 			$elm$html$Html$Events$alwaysStop,
 			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
 };
+var $elm$json$Json$Encode$string = _Json_wrap;
 var $elm$html$Html$Attributes$stringProperty = F2(
 	function (key, string) {
 		return A2(
@@ -6503,16 +6450,12 @@ var $elm$html$Html$Attributes$stringProperty = F2(
 			$elm$json$Json$Encode$string(string));
 	});
 var $elm$html$Html$Attributes$placeholder = $elm$html$Html$Attributes$stringProperty('placeholder');
-var $elm$core$String$replace = F3(
-	function (before, after, string) {
-		return A2(
-			$elm$core$String$join,
-			after,
-			A2($elm$core$String$split, before, string));
-	});
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
 var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
+var $author$project$Main$viewDocument = function (msgHtmlList) {
+	return {body: msgHtmlList, title: 'three-letterSiritori'};
+};
 var $author$project$Main$ChangeAtUser = function (a) {
 	return {$: 'ChangeAtUser', a: a};
 };
@@ -6592,16 +6535,11 @@ var $author$project$Main$viewHeader = function (model) {
 			]));
 };
 var $author$project$Main$view = function (model) {
-	var hostName = 'https://jwspgcr.github.io/tlsForBrowser';
-	var urlString = A3(
-		$elm$core$String$replace,
-		hostName,
-		'',
-		$elm$url$Url$toString(model.url));
-	switch (urlString) {
-		case '/home':
-			return {
-				body: _List_fromArray(
+	var _v0 = model.url.path;
+	switch (_v0) {
+		case '/tlsForBrowser/home':
+			return $author$project$Main$viewDocument(
+				_List_fromArray(
 					[
 						$author$project$Main$viewHeader(model),
 						A2(
@@ -6624,12 +6562,10 @@ var $author$project$Main$view = function (model) {
 								$elm$html$Html$text('送信')
 							])),
 						$elm$html$Html$text(model.homeText)
-					]),
-				title: 'three-letterSiritori'
-			};
-		case '/add':
-			return {
-				body: _List_fromArray(
+					]));
+		case '/tlsForBrowser/add':
+			return $author$project$Main$viewDocument(
+				_List_fromArray(
 					[
 						$author$project$Main$viewHeader(model),
 						A2(
@@ -6652,12 +6588,10 @@ var $author$project$Main$view = function (model) {
 								$elm$html$Html$text('送信')
 							])),
 						$elm$html$Html$text(model.addText)
-					]),
-				title: 'three-letterSiritori'
-			};
-		case '/history':
-			return {
-				body: _List_fromArray(
+					]));
+		case '/tlsForBrowser/history':
+			return $author$project$Main$viewDocument(
+				_List_fromArray(
 					[
 						$author$project$Main$viewHeader(model),
 						A2(
@@ -6671,18 +6605,24 @@ var $author$project$Main$view = function (model) {
 								$elm$html$Html$text('履歴取得')
 							])),
 						$elm$html$Html$text(model.historyText)
-					]),
-				title: 'three-letterSiritori'
-			};
+					]));
 		default:
-			return {
-				body: _List_fromArray(
+			return $author$project$Main$viewDocument(
+				_List_fromArray(
 					[
 						$author$project$Main$viewHeader(model),
+						A2(
+						$elm$html$Html$button,
+						_List_fromArray(
+							[
+								$elm$html$Html$Events$onClick($author$project$Main$PostAtHistory)
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('履歴取得')
+							])),
 						$elm$html$Html$text('このページは存在しません。')
-					]),
-				title: 'three-letterSiritori'
-			};
+					]));
 	}
 };
 var $author$project$Main$main = $elm$browser$Browser$application(
