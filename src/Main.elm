@@ -94,16 +94,16 @@ update msg model =
             ( { model | inputText = text }, Cmd.none )
 
         PostAtUser ->
-            ( model, postAtUser model.inputUser )
+            ( model, postRequest GotAtUser (Request model.inputUser "/tls-init" "") )
 
         PostAtHome ->
-            ( model, postAtHome model.inputUser model.inputText )
+            ( model, postRequest GotAtHome (Request model.inputUser "/tls" model.inputText) )
 
         PostAtAdd ->
-            ( model, postAtAdd model.inputUser model.inputText )
+            ( model, postRequest GotAtAdd (Request model.inputUser "/tls-add" model.inputText) )
 
         PostAtHistory ->
-            ( model, postAtHistory model.inputUser)
+            ( model, postRequest GotAtHistory (Request model.inputUser "/tls-history" "") )
 
         GotAtUser result ->
             case result of
@@ -119,17 +119,21 @@ update msg model =
                     ( { model | homeText = message }, Cmd.none )
 
                 Err error ->
-                  case error of
-                    Http.BadUrl message->
-                      ( { model | homeText = "BadUrl"++message }, Cmd.none )
-                    Http.Timeout->
-                      ( { model | homeText = "Timeout" }, Cmd.none )
-                    Http.NetworkError->
-                      ( { model | homeText = "NetworkError" }, Cmd.none )
-                    Http.BadStatus code->
-                      ( { model | homeText = "BadStatus"++ (String.fromInt code) }, Cmd.none )
-                    Http.BadBody message->
-                      ( { model | homeText = "BadBody" ++ message }, Cmd.none )
+                    case error of
+                        Http.BadUrl message ->
+                            ( { model | homeText = "BadUrl" ++ message }, Cmd.none )
+
+                        Http.Timeout ->
+                            ( { model | homeText = "Timeout" }, Cmd.none )
+
+                        Http.NetworkError ->
+                            ( { model | homeText = "NetworkError" }, Cmd.none )
+
+                        Http.BadStatus code ->
+                            ( { model | homeText = "BadStatus" ++ String.fromInt code }, Cmd.none )
+
+                        Http.BadBody message ->
+                            ( { model | homeText = "BadBody" ++ message }, Cmd.none )
 
         GotAtAdd result ->
             case result of
@@ -163,15 +167,8 @@ subscriptions _ =
 
 view : Model -> Browser.Document Msg
 view model =
-    let
-        hostName =
-            "https://jwspgcr.github.io/tlsForBrowser"
-
-        urlString =
-            String.replace hostName "" (Url.toString model.url)
-    in
-    case urlString of
-        "/home" ->
+    case model.url.path of
+        "/tlsForBrowser/home" ->
             { title = "three-letterSiritori"
             , body =
                 [ viewHeader model
@@ -181,7 +178,7 @@ view model =
                 ]
             }
 
-        "/add" ->
+        "/tlsForBrowser/add" ->
             { title = "three-letterSiritori"
             , body =
                 [ viewHeader model
@@ -191,7 +188,7 @@ view model =
                 ]
             }
 
-        "/history" ->
+        "/tlsForBrowser/history" ->
             { title = "three-letterSiritori"
             , body =
                 [ viewHeader model
@@ -232,21 +229,23 @@ viewHeader model =
 
 -- HTTP
 
+postRequest :((Result Http.Error String) -> Msg) ->Request -> Cmd Msg
+postRequest msg req=
+  Http.post
+      { url = "https://jwspgcrtls2.pythonanywhere.com"
+      , body = Http.stringBody "application/x-www-form-urlencoded" (newRequest req)
+      , expect = Http.expectJson msg textDecoder
+      }
 
-postAtUser : String -> Cmd Msg
-postAtUser userID =
-    Http.post
-        { url = "https://jwspgcrtls2.pythonanywhere.com"
-        , body = Http.jsonBody (textEncoder userID "/tls-init" "")
-        , expect = Http.expectJson GotAtHome textDecoder
-        }
+postAtUser msg req =
+  postCommon GotAtUser req
 
 
 postAtHome : String -> String -> Cmd Msg
-postAtHome userID jsonText =
+postAtHome =
     Http.post
         { url = "https://jwspgcrtls2.pythonanywhere.com"
-        , body = Http.jsonBody (textEncoder userID "/tls" jsonText)
+        , body = Http.stringBody "application/x-www-form-urlencoded" newRequest
         , expect = Http.expectJson GotAtHome textDecoder
         }
 
@@ -274,10 +273,17 @@ textDecoder =
     D.field "text" D.string
 
 
-textEncoder : String -> String -> String -> E.Value
-textEncoder userID command text =
-    E.object
-        [ ( "command", E.string command )
-        , ( "user_id", E.string userID )
-        , ( "text", E.string text )
-        ]
+newRequest : Request -> E.Value
+newRequest req =
+    [ "user_id=", req.userID, "&command=", req.command, "&text", req, text ] |> String.concat
+
+
+
+-- TYPE
+
+
+type alias Request =
+    { userID : String
+    , command : String
+    , text : String
+    }
