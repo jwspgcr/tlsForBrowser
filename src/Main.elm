@@ -80,10 +80,25 @@ subscriptions _ =
 view : Model -> Browser.Document Msg
 view model =
   let
-    urlString = Url.toString model.url
+    hostName = "http://localhost:8000"
+    urlString = String.replace hostName "" (Url.toString model.url)
   in
     case urlString of
       "/home" ->
+        { title = "three-letterSiritori"
+        , body =
+            [viewHeader
+            , a [href "/add"] [text "add"]
+            ]
+        }
+      "/add" ->
+        { title = "three-letterSiritori"
+        , body =
+            [viewHeader
+            , text urlString
+            ]
+        }
+      _ ->
         { title = "three-letterSiritori"
         , body =
             [ h1 [] [text "3文字しりとり"]
@@ -91,17 +106,22 @@ view model =
                 [ viewLink "/home" "しりとり"
                 , viewLink "/add" "単語の追加"
                 , viewLink "/history" "履歴"
+                , text urlString
                 ]
             ]
-        }
-      _ ->
-        { title = "three-letterSiritori"
-        , body =
-          [text urlString
-          ]
         }
 
 
 viewLink : String -> String -> Html msg
 viewLink path txt =
   li [] [ a [ href path ] [ text txt ] ]
+
+viewHeader : Html Msg
+viewHeader = header []
+  [ h1 [] [text "3文字しりとり"]
+  , ul []
+      [ viewLink "/home" "しりとら"
+      , viewLink "/add" "単語の追加"
+      , viewLink "/history" "履歴"
+      ]
+  ]
