@@ -236,7 +236,7 @@ viewHeader model =
 postAtUser : String -> Cmd Msg
 postAtUser userID =
     Http.post
-        { url = "http://jwspgcrtls2.pythonanywhere.com"
+        { url = "https://jwspgcrtls2.pythonanywhere.com"
         , body = Http.jsonBody (textEncoder userID "/tls-init" "")
         , expect = Http.expectJson GotAtHome textDecoder
         }
@@ -245,7 +245,7 @@ postAtUser userID =
 postAtHome : String -> String -> Cmd Msg
 postAtHome userID jsonText =
     Http.post
-        { url = "http://jwspgcrtls2.pythonanywhere.com"
+        { url = "https://jwspgcrtls2.pythonanywhere.com"
         , body = Http.jsonBody (textEncoder userID "/tls" jsonText)
         , expect = Http.expectJson GotAtHome textDecoder
         }
@@ -254,7 +254,7 @@ postAtHome userID jsonText =
 postAtAdd : String -> String -> Cmd Msg
 postAtAdd userID jsonText =
     Http.post
-        { url = "http://jwspgcrtls2.pythonanywhere.com"
+        { url = "https://jwspgcrtls2.pythonanywhere.com"
         , body = Http.jsonBody (textEncoder userID "/tls-add" jsonText)
         , expect = Http.expectJson GotAtAdd textDecoder
         }
@@ -263,7 +263,7 @@ postAtAdd userID jsonText =
 postAtHistory : String -> Cmd Msg
 postAtHistory userID =
     Http.post
-        { url = "http://jwspgcrtls2.pythonanywhere.com"
+        { url = "https://jwspgcrtls2.pythonanywhere.com"
         , body = Http.jsonBody (textEncoder userID "/tls-history" "")
         , expect = Http.expectJson GotAtHistory textDecoder
         }
