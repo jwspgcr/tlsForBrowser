@@ -36,16 +36,13 @@ type alias Model =
     , url : Url.Url
     , inputUser : String
     , inputText : String
-    , userText : String
-    , homeText : String
-    , historyText : String
-    , addText : String
+    , outputText : String
     }
 
 
 init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
-    ( Model key url "" "" "" "" "" "", Cmd.none )
+    ( Model key url "" "" "ここにサーバーからの応答が表示されます。", Cmd.none )
 
 
 
@@ -59,13 +56,10 @@ type Msg
     | PostAtHome
     | PostAtAdd
     | PostAtHistory
-    | GotAtUser (Result Http.Error String)
-    | GotAtHome (Result Http.Error String)
-    | GotAtAdd (Result Http.Error String)
-    | GotAtHistory (Result Http.Error String)
+    | PostAtHelp
+    | GotText (Result Http.Error String)
     | ChangeAtUser String
     | ChangeAtHome String
-    | ChangeAtAdd String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -74,7 +68,8 @@ update msg model =
         postRequest : (Result Http.Error String -> Msg) -> Request -> Cmd Msg
         postRequest message req =
             Http.post
-                { url = "https://jwspgcrtls2.pythonanywhere.com"
+                -- { url = "https://jwspgcrtls2.pythonanywhere.com"
+                { url = "http://127.0.0.1:8000"
                 , body = Http.stringBody "application/x-www-form-urlencoded" (newRequest req)
                 , expect = Http.expectJson message textDecoder
                 }
@@ -85,7 +80,7 @@ update msg model =
 
         newRequest : Request -> String
         newRequest req =
-            [ "user_id=", req.userID, "&command=", req.command, "&text", req.text ] |> String.concat
+            [ "user_id=", req.userID, "&command=", req.command, "&text=", req.text ] |> String.concat
 
         showResult : Result Http.Error String -> (String -> Model) -> ( Model, Cmd Msg )
         showResult result modelFunc =
@@ -130,32 +125,23 @@ update msg model =
         ChangeAtHome text ->
             ( { model | inputText = text }, Cmd.none )
 
-        ChangeAtAdd text ->
-            ( { model | inputText = text }, Cmd.none )
-
         PostAtUser ->
-            ( model, postRequest GotAtUser (Request model.inputUser "/tls-init" "") )
+            ( model, postRequest GotText (Request model.inputUser "/tls-init" "") )
 
         PostAtHome ->
-            ( model, postRequest GotAtHome (Request model.inputUser "/tls" model.inputText) )
+            ( model, postRequest GotText (Request model.inputUser "/tls" model.inputText) )
 
         PostAtAdd ->
-            ( model, postRequest GotAtAdd (Request model.inputUser "/tls-add" model.inputText) )
+            ( model, postRequest GotText (Request model.inputUser "/tls-add" model.inputText) )
 
         PostAtHistory ->
-            ( model, postRequest GotAtHistory (Request model.inputUser "/tls-history" "") )
+            ( model, postRequest GotText (Request model.inputUser "/tls-history" "") )
 
-        GotAtUser result ->
-            showResult result (\text -> { model | userText = text })
+        PostAtHelp ->
+          ( model, postRequest GotText (Request "" "/tls-help" "") )
 
-        GotAtHome result ->
-            showResult result (\text -> { model | homeText = text })
-
-        GotAtAdd result ->
-            showResult result (\text -> { model | addText = text })
-
-        GotAtHistory result ->
-            showResult result (\text -> { model | historyText = text })
+        GotText result ->
+            showResult result (\text -> { model | outputText = text })
 
 
 
@@ -174,33 +160,26 @@ subscriptions _ =
 view : Model -> Browser.Document Msg
 view model =
     case model.url.path of
-        "/tlsForBrowser/home" ->
-            viewDocument
-                [ viewHeader model
-                , input [ placeholder "三文字のかたかな", value model.inputText, onInput ChangeAtHome ] []
-                , button [ onClick PostAtHome ] [ text "送信" ]
-                , text model.homeText
-                ]
-
-        "/tlsForBrowser/add" ->
-            viewDocument
-                [ viewHeader model
-                , input [ placeholder "三文字のかたかな", value model.inputText, onInput ChangeAtAdd ] []
-                , button [ onClick PostAtAdd ] [ text "送信" ]
-                , text model.addText
-                ]
-
-        "/tlsForBrowser/history" ->
-            viewDocument
-                [ viewHeader model
-                , button [ onClick PostAtHistory ] [ text "履歴取得" ]
-                , text model.historyText
-                ]
+        "/tlsForBrowser/" ->
+          viewDocument
+              [ viewHeader model
+              , input [ placeholder "三文字のかたかな", value model.inputText, onInput ChangeAtHome ] []
+              , button [ onClick PostAtHome
+                      , enableIfUserIdExists model
+                      ] [ text "/tls" ]
+              , button [ onClick PostAtAdd
+                      , enableIfUserIdExists model
+                      ] [ text "/tls-add" ]
+              , button [ onClick PostAtHistory
+                      , enableIfUserIdExists model
+                      ] [ text "/tls-history" ]
+              , br [] []
+              , pre [] [ text model.outputText ]
+              ]
 
         _ ->
             viewDocument
                 [ viewHeader model
-                , button [ onClick PostAtHistory ] [ text "履歴取得" ]
                 , text "このページは存在しません。"
                 ]
 
@@ -215,12 +194,16 @@ viewHeader model =
     header []
         [ h1 [] [ text "三文字しりとり" ]
         , ul []
-            [ viewLink "/tlsForBrowser/home" "しりとり"
-            , viewLink "/tlsForBrowser/add" "単語の追加"
-            , viewLink "/tlsForBrowser/history" "履歴"
-            , input [ placeholder "お名前", value model.inputUser, onInput ChangeAtUser ] []
-            , text model.userText
-            , button [ onClick PostAtUser ] [ text "しりとりを初期化" ]
+            [ button [ onClick PostAtHelp] [ text "/tls-help" ]
+            , br [] []
+            , input
+              [ placeholder "お名前"
+              , value model.inputUser
+              , onInput ChangeAtUser
+              ] []
+            , button [ onClick PostAtUser
+                    , enableIfUserIdExists model] [ text "/tls-init" ]
+            , hr [] []
             ]
         ]
 
@@ -230,6 +213,14 @@ viewDocument msgHtmlList =
     { title = "three-letterSiritori"
     , body = msgHtmlList
     }
+
+
+enableIfUserIdExists: Model -> Html.Attribute Msg
+enableIfUserIdExists model =
+    if  String.length model.inputUser  == 0 then
+      disabled True
+    else
+      disabled False
 
 
 
