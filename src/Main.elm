@@ -68,8 +68,8 @@ update msg model =
         postRequest : (Result Http.Error String -> Msg) -> Request -> Cmd Msg
         postRequest message req =
             Http.post
-                -- { url = "https://jwspgcrtls2.pythonanywhere.com"
-                { url = "http://127.0.0.1:8000"
+                { url = "https://jwspgcrtls2.pythonanywhere.com"
+                -- { url = "http://127.0.0.1:8000"
                 , body = Http.stringBody "application/x-www-form-urlencoded" (newRequest req)
                 , expect = Http.expectJson message textDecoder
                 }
